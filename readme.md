@@ -14,9 +14,24 @@
 3. Запустить миграции ```php artisan make:migration```
 
 ## Запрос на создание 
+Пример:  
 ```POST http://flats.test/api/add?city=Москва&district=Аэропорт&residential_block=ЖК Art House&building=1&address=улица 1, дом 6&floor=2&rooms=3&area=87&price=55``` 
 
+Параметры
+```
+city
+district
+residential_block - Название ЖК
+building - Корпус
+address
+floor
+rooms
+area
+price
+```
+
 ## Запрос на поиск
+Пример:  
 ```POST http://flats.test/api/search?city=Москва```
 
 Поддерживает такие параметры поиска:
