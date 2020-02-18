@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Dto\Filter;
+use App\Dto\LoggerFilter;
+use App\Dto\SimpleFilter;
 use App\Services\FlatService;
 use Illuminate\Http\Request;
 
@@ -29,7 +30,11 @@ class FlatController extends Controller
     public function search(Request $request)
     {
         $this->validateSearchRequest($request);
-        $filter = new Filter($request->all());
+        // простой фильтр
+        //$filter = new SimpleFilter($request->all());
+
+        // фильтр с логированием
+        $filter = new LoggerFilter($request->all());
         $page = $request->input('page', 0);
         $result = $this->flatService->search($filter, $page);
 

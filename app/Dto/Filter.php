@@ -2,7 +2,11 @@
 
 namespace App\Dto;
 
-class Filter
+/**
+ * Фильтр.
+ * @package App\Dto
+ */
+abstract class Filter
 {
     public $city;
     public $district;

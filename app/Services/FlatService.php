@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Dto\Filter;
+use App\Dto\SimpleFilter;
 use App\Models\Flat;
 
 class FlatService
