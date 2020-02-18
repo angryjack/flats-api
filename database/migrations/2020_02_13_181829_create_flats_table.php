@@ -19,6 +19,7 @@ class CreateFlatsTable extends Migration
         Schema::create('flats', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('district_id')->nullable();
+            $table->unsignedBigInteger('building_id')->nullable();
             $table->unsignedBigInteger('residential_block_id')->nullable();
 
             $table->string('address', 191);

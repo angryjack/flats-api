@@ -3,21 +3,50 @@
 namespace App\Services;
 
 use App\Dto\Filter;
-use App\Models\Building;
-use App\Models\City;
-use App\Models\District;
 use App\Models\Flat;
-use App\Models\ResidentialBlock;
 
 class FlatService
 {
+    /**
+     * @var BuildingService
+     */
+    private $buildingService;
+    /**
+     * @var CityService
+     */
+    private $cityService;
+    /**
+     * @var DistrictService
+     */
+    private $districtService;
+    /**
+     * @var ResidentialBlockService
+     */
+    private $residentialBlockService;
+
+    public function __construct(
+        BuildingService $buildingService,
+        CityService $cityService,
+        DistrictService $districtService,
+        ResidentialBlockService $residentialBlockService
+    )
+    {
+        $this->buildingService = $buildingService;
+        $this->cityService = $cityService;
+        $this->districtService = $districtService;
+        $this->residentialBlockService = $residentialBlockService;
+    }
+
     public function search(Filter $filter, int $page)
     {
-        return Flat
+        //todo кол-во элементов на странице. Можем передавать в запросе, можем брать из конфига и тд.
+        $perPage = 1;
+
+        $result = Flat
             // если задан район
             ::when($filter->district, function ($query) use ($filter) {
                 $query->whereHas('district', function ($query) use ($filter) {
-                    $query->where('districts.title', $filter->district);
+                    $query->where('districts.title', 'like', '%' . $filter->district . '%');
                 });
             })
             // если не задан район, но задан город. (т.к. район в себе содержит уже город)
@@ -26,23 +55,37 @@ class FlatService
                 // выбираем сначала все районы принадлежащие квартирам, а потом смотрим их города
                 $query->whereHas('district', function ($query) use ($filter) {
                     $query->whereHas('city', function ($query) use ($filter) {
-                        $query->where('cities.title', $filter->city);
+                        $query->where('cities.title', 'like', '%' . $filter->city . '%');
                     });
                 });
             })
             //если передан адрес
             ->when($filter->address, function ($query) use ($filter) {
                 // todo тут обработать возможные ошибки в названии
-                $query->where('address', $filter->address);
+                $query->where('address', 'like', '%' . $filter->address . '%');
             })
-            // цена
-            ->when($filter->price, function ($query) use ($filter) {
-                $query->where('price', '<=', $filter->price);
+
+            // жилой комплекс
+            ->when($filter->residentialBlock, function ($query) use ($filter) {
+                $query->whereHas('residentialBlock', function ($query) use ($filter) {
+                    $query->where('residential_blocks.title', 'like', '%' . $filter->residentialBlock . '%');
+                });
             })
+
+            //корпус или максимальное кол-во этажей
+            ->when($filter->building || $filter->maxFloors, function ($query) use ($filter) {
+                $query->whereHas('building', function ($query) use ($filter) {
+                    $query
+                        ->where('buildings.title', 'like', '%' . $filter->residentialBlock . '%')
+                        ->orWhere('max_floors', '<=', $filter->maxFloors);
+                });
+            })
+
             // этаж
             ->when($filter->floor, function ($query) use ($filter) {
                 $query->where('floor', $filter->floor);
             })
+
             // кол-во комнат
             ->when($filter->rooms, function ($query) use ($filter) {
                 // меньше либо равно
@@ -53,20 +96,43 @@ class FlatService
                 // больше или равно
                 $query->where('area', '>=', $filter->area);
             })
-            // подгружаем с городом, районом и ЖК
-            ->with(['district.city', 'residentialBlock'])
+
+            // цена
+            ->when($filter->price, function ($query) use ($filter) {
+                $query->where('price', '<=', $filter->price);
+            })
+
+            // подгружаем с городом, районом и ЖК, корпусом
+            ->with(['district.city', 'residentialBlock', 'building'])
+
+            // пагинация
+            ->skip($page * $perPage)
+            ->take($perPage)
+            // fixme вообще offset медленно работает при больших сдвигах,
+            // поэтому можно заюзать дополнительное условие вместо него
+            // например, запоминать последний просмотренный элемент, а потом
+            // делать выборку от этого элемента
+            // также результат может быть неконсистентый, если добавляются новые элементы
+
+            // получаем результат
             ->get();
+
+        return $result;
     }
 
-    public function add(array $data)
+    public function add(array $data): Flat
     {
-        $city = $this->getCity($data['city']);
-        $district = $this->getDistrict($city, $data['district']);
-        $block = $this->getResidentialBlock($data['residential_block']);
+        //добавляем город при условии, что его нет.
+        //мы должны оперировать существующими городами, но
+        //для демонстарции api сделаем возможность добавления.
+        $city = $this->cityService->getOrCreate($data['city']);
+        //добавляем район
+        $district = $this->districtService->getOrCreate($city, $data['district']);
+        //добавлям жилой комплекс
+        $block = $this->residentialBlockService->getOrCreate($data['residential_block']);
+        //корпус
+        $building = $this->buildingService->getOrCreate($block, $data);
 
-        if ($data['building']) {
-            $building = $this->getBuilding($block, $data['building']);
-        }
 
         $flat = Flat::create([
             'address' => $data['address'],
@@ -77,44 +143,14 @@ class FlatService
 
             // связи
             'residential_block_id' => $block->id,
-            'district_id' => $district->id
+            'district_id' => $district->id,
+            'building_id' => $building->id
         ]);
 
         // можно еще так, это это доп запросы.
         //$flat->district()->associate($district);
         //$flat->residentialBlock()->associate($block);
-    }
 
-    // получаем город
-    // вообще мы не должны создавать город при добавлении квартиры,
-    // они должны быть определены до запуска приложения, но
-    // так как это тестовое задание, для упрощения работы - сделал.
-    //todo завести под каждый метод ниже свой сервис
-    public function getCity(string $title): City
-    {
-        return City::firstOrCreate(['title' => $title]);
-    }
-
-    public function getDistrict(City $city, string $title): District
-    {
-        return District::firstOrCreate([
-            'title' => $title,
-            'city_id' => $city->id
-        ]);
-    }
-
-    public function getResidentialBlock(string $title): ResidentialBlock
-    {
-        return ResidentialBlock::firstOrCreate(['title' => $title]);
-    }
-
-    public function getBuilding(ResidentialBlock $block, string $title): Building
-    {
-        return Building::firstOrCreate([
-            'title' => $title,
-            'residential_block_id' => $block->id,
-            'flats_from' => 0,
-            'flats_to' => 99,
-        ]);
+        return $flat;
     }
 }

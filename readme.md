@@ -13,36 +13,42 @@
 2. Запустить ```composer install```
 3. Запустить миграции ```php artisan make:migration```
 
-## Запрос на создание 
-Пример:  
-```POST http://flats.test/api/add?city=Москва&district=Аэропорт&residential_block=ЖК Art House&building=1&address=улица 1, дом 6&floor=2&rooms=3&area=87&price=55``` 
+## Добавление квартиры
+Пример запроса:  
+```POST http://flats.test/api/add?city=Москва&district=Аэропорт&residential_block=ЖК Art House&building=1&address=улица 1, дом 6&floor=2&rooms=3&area=87&max_floors=10``` 
+
+Статусы ответа:  
+```422``` При ошибке валидации данных. Возварщается ассоциативный массив, где ключ - поле в котором произошла ошибка валидации, а значение - описание ошибки.  
+```200``` При успешном добавлении. Возвращается созданный объект.
 
 Параметры
 ```
 city
 district
-residential_block - Название ЖК
-building - Корпус
 address
+residential_block - Жилой комплекс
+building - Корпус
+max_floors
 floor
 rooms
 area
 price
 ```
 
-## Запрос на поиск
-Пример:  
+## Поиск
+Пример запроса:  
 ```POST http://flats.test/api/search?city=Москва```
 
-Поддерживает такие параметры поиска:
-```city - город
+Поддерживаемые параметры поиска:
+```page - страница поиска
+city - город
 district - район
 address - адрес
-residentialBlock - название ЖК
+residential_block - Жилой комплекс 
 building - корпус
-maxFloors - максимальное кол-во этажей
+max_floors - максимальное кол-во этажей
 floor - этаж
 rooms - кол-во комнат
-area - площадь
-price - цена
+area - площадь квартиры
+price - стоимость аренды
 ```

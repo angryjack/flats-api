@@ -23,6 +23,7 @@ class CreateBuildingsTable extends Migration
             $table->string('title');
             $table->integer('flats_from');
             $table->integer('flats_to');
+            $table->integer('max_floors');
 
             $table->timestamps();
         });

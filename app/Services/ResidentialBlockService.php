@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\City;
+use App\Models\ResidentialBlock;
 
-class CityService
+class ResidentialBlockService
 {
-    public function getByTitle(string $title)
+    public function getOrCreate(string $title): ResidentialBlock
     {
-        return City::firstOrCreate(['title' => $title]);
+        return ResidentialBlock::firstOrCreate(['title' => $title]);
     }
 }

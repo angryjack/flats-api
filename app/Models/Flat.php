@@ -17,6 +17,7 @@ class Flat extends Model
         'price',
         'district_id',
         'residential_block_id',
+        'building_id',
     ];
 
     public function district()
@@ -27,5 +28,10 @@ class Flat extends Model
     public function residentialBlock()
     {
         return $this->belongsTo(ResidentialBlock::class);
+    }
+
+    public function building()
+    {
+        return $this->belongsTo(Building::class);
     }
 }

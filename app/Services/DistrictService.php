@@ -3,11 +3,15 @@
 namespace App\Services;
 
 use App\Models\City;
+use App\Models\District;
 
-class CityService
+class DistrictService
 {
-    public function getByTitle(string $title): City
+    public function getOrCreate(City $city, string $title): District
     {
-        return City::firstOrCreate(['title' => $title]);
+        return District::firstOrCreate([
+            'title' => $title,
+            'city_id' => $city->id
+        ]);
     }
 }

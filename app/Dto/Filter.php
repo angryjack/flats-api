@@ -18,21 +18,21 @@ class Filter
     public function __construct(array $data)
     {
         $keys = [
-            'city',
-            'district',
-            'address',
-            'residentialBlock',
-            'building',
-            'maxFloors',
-            'floor',
-            'rooms',
-            'area',
-            'price',
+            'city' => 'city',
+            'district' => 'district',
+            'address' => 'address',
+            'residential_block' => 'residentialBlock',
+            'building' => 'building',
+            'max_floors' => 'maxFloors',
+            'floor' => 'floor',
+            'rooms' => 'rooms',
+            'area' => 'area',
+            'price' => 'price',
         ];
 
-        foreach ($keys as $key) {
+        foreach ($keys as $key => $prop) {
             if (isset($data[$key])) {
-                $this->$key = $data[$key];
+                $this->$prop = $data[$key];
             }
         }
     }
