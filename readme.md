@@ -1,12 +1,25 @@
 # Тестовое задание
 
-Структура проекта:
+Структура проекта:  
+Модели:
 - App\Models\Flat - Модель квартиры
 - App\Models\City - Модель города
 - App\Models\District - Модель района
 - App\Models\ResidentialBlock - Модель ЖК
 - App\Models\Building - Модель Корпуса ЖК
 
+Сервисы:
+- App\Models\FlatService - сервис для создания/поиска квартир
+- App\Models\BuildingService
+- App\Models\CityService
+- App\Models\DistrictService
+- App\Models\ResidentialBlockService
+
+Контроллеры:
+- App\Controllers\FlatController
+
+Миграции:  
+В папке **database/migrations**
 
 ## Инициализация
 1. Скопировать .env и прописать данные для подключения к БД.
